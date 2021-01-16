@@ -17,7 +17,8 @@ import (
 
 type DirOpts struct {
 	//::builder-gen
-	Recursive bool
+	Recursive           bool
+	RecursiveExclusions []string
 }
 
 func Dir(dir string, opts ...DirOptsFunc) error {
@@ -31,10 +32,27 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 
 	info := ToDirOpts(opts...)
 	if info.Recursive {
+		dirs := make(map[string]struct{})
+		for _, ex := range info.RecursiveExclusions {
+			f := strings.TrimSpace(ex)
+			p, err := filepath.Abs(f)
+			if err != nil {
+				return err
+			}
+
+			dirs[p] = struct{}{}
+		}
 		return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
-				if strings.HasSuffix(info.Name(), ".") {
+				if strings.HasPrefix(info.Name(), ".") {
+					dirs[path] = struct{}{}
 					return nil
+				}
+
+				for ex := range dirs {
+					if strings.HasPrefix(path, ex) {
+						return nil
+					}
 				}
 
 				return Dir(path)

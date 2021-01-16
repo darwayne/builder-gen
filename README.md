@@ -6,6 +6,17 @@ builder gen is a go tool that helps you
 generate optional functions for a struct 
 via a builder type
 
+### Command Line Usage
+```text
+  -dir string
+        the directory to run builder-gen on. Will use working directory if not provided
+  -recursive
+        set to true to recursively iterate directories; auto excludes any directories starting with .
+  -recursive-exclusions string
+        a comma separated list of directories to exclude when recursively iterating
+
+```
+
 
 ### Setup Example
 
@@ -27,14 +38,6 @@ you want to generate a builder for
 1. Run `go generate ./...`
 1. A file called `build_gen_my_opts.go` gets generated with useful builder / optional funcs helpers for your struct
    - note: a file gets generated for each struct type within the package with the `::builder-gen` comment
-
-### Command Line Usage
-```text
-  --dir string
-        the directory to run builder-gen on. Will use working directory if not provided
-  --recursive
-        set to true to recursively iterate directories
-```
 
 ### Features
 
