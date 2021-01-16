@@ -26,7 +26,7 @@ you want to generate a builder for
      ```
 1. Run `go generate ./...`
 1. A file called `build_gen_my_opts.go` gets generated with useful builder / optional funcs helpers for your struct
-  - note: a file gets generated for each struct type within the package with the `::builder-gen` comment
+   - note: a file gets generated for each struct type within the package with the `::builder-gen` comment
 
 ### Features
 
