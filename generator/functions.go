@@ -41,8 +41,6 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 	ast.Inspect(t, func(node ast.Node) bool {
 		switch t := node.(type) {
 		case *ast.StructType:
-			_ = t
-			fmt.Println("struct spotted")
 			if t.Fields == nil {
 				return false
 			}
@@ -57,13 +55,6 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 				field.FuncName = field.FieldName
 				field.ParamName = LcFirst(field.FieldName)
 
-				fmt.Println("field", f.Names[0].Name)
-				//if f.Type != nil {
-				//	ast.Inspect(f.Type, func(node ast.Node) bool {
-				//		fmt.Printf("field:type::::::::%T\n", node)
-				//		return true
-				//	})
-				//}
 				var mainType string
 				var isArray bool
 				var isPointer bool
@@ -78,16 +69,12 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 						}
 						field.FieldType += t.Name
 						mainType += t.Name
-						fmt.Println("____===", t.Name, t.Obj)
-						if t.Obj != nil {
-							fmt.Println("\t", t.Obj.Name)
-						}
 					case *ast.ArrayType:
 						isArray = true
 						field.FieldType += "[]"
 						field.FieldParamPrefix = "..."
 					}
-					fmt.Printf(":::::::%T\n", node)
+
 					return true
 				})
 
@@ -122,10 +109,23 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 
 	fileData.Package = f.Name.Name
 
+	for _, c := range f.Comments {
+		for _, l := range c.List {
+			if strings.Contains(l.Text, "+build ") {
+				fmt.Println(l.Text)
+				fileData.BuildTags += l.Text + "\n\n"
+				break
+			}
+
+		}
+		break
+	}
+
 	return fileData
 }
 
 type Data struct {
+	BuildTags     string
 	Package       string
 	Imports       string
 	Type          string
