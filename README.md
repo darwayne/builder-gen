@@ -43,7 +43,7 @@ var opt MyOpts
 
 // Because Cool is a pointer we generate a HasCool helper function
 // to help you check if it was set
-if opt.HasCool() {....}
+if opt.HasCool() {...}
 ```
 
 ***Builder Generated Just for your Struct***
