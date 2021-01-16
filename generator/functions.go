@@ -68,6 +68,10 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 						if t.Obj != nil && t.Obj.Type != "var" {
 							return false
 						}
+						if field.FieldType != "" && field.FieldType != "*" && len(field.FieldType) > 2 {
+							field.FieldType += "."
+							mainType += "."
+						}
 						field.FieldType += t.Name
 						mainType += t.Name
 					case *ast.ArrayType:

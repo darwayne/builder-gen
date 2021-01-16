@@ -1,6 +1,9 @@
 package testpkg
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type MyOpts struct {
 	// ::builder-gen
@@ -8,6 +11,7 @@ type MyOpts struct {
 	Interesting *bool
 	Yo          string
 	Total       int
+	Duration    time.Duration
 }
 
 func Yo() {
