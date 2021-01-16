@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"go/ast"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode"
@@ -87,6 +88,11 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 				}
 				field.ParamType += mainType
 				fileData.BuilderFields = append(fileData.BuilderFields, field)
+				if isPointer || isArray {
+					fileData.PointerFields = append(fileData.PointerFields, field)
+				} else {
+					fileData.NonPointerFields = append(fileData.NonPointerFields, field)
+				}
 
 			}
 			return false
@@ -125,12 +131,19 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 }
 
 type Data struct {
-	BuildTags     string
-	Package       string
-	Imports       string
-	Type          string
-	BuilderFields []BuilderField
+	BuildTags        string
+	Package          string
+	Imports          string
+	Type             string
+	BuilderFields    []BuilderField
+	PointerFields    []BuilderField
+	NonPointerFields []BuilderField
 }
+
+func (d Data) FilePath(dir string) string {
+	return filepath.Join(dir, fmt.Sprintf("%s%s.go", filePrefix, ToSnakeCase(d.Type)))
+}
+
 type BuilderField struct {
 	ParamName        string
 	ParamType        string

@@ -1,13 +1,17 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	"go/parser"
 	"go/token"
+	"io"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 	"text/template"
+
+	"golang.org/x/tools/imports"
 )
 
 func Dir(dir string) error {
@@ -20,8 +24,15 @@ func Dir(dir string) error {
 	}
 
 	fset := token.NewFileSet()
+	filesToDelete := make(map[string]struct{})
 	pkgs, err := parser.ParseDir(fset, dir, func(info os.FileInfo) bool {
-		return strings.Index(info.Name(), "builder_gen_") != 0
+		include := strings.Index(info.Name(), filePrefix) != 0
+		if !include {
+			_, filename := path.Split(info.Name())
+			filesToDelete[filename] = struct{}{}
+		}
+
+		return include
 	}, parser.ParseComments)
 	if err != nil {
 		return err
@@ -39,23 +50,54 @@ func Dir(dir string) error {
 		return err
 	}
 	for _, m := range models {
-		if err := DataToFile(dir, tpl, m); err != nil {
+		output := m.FilePath(dir)
+		_, filename := path.Split(output)
+		fmt.Println("generating", filename, "for struct", m.Type)
+		if err := DataToFile(output, tpl, m); err != nil {
 			return err
 		}
+
+		delete(filesToDelete, filename)
 	}
 
-	fmt.Printf("%+v\n", models)
+	for file := range filesToDelete {
+		f := path.Join(dir, file)
+		fmt.Println("deleting file", file, os.Remove(f))
+	}
 
 	return nil
 }
 
-func DataToFile(dir string, tpl *template.Template, data Data) (err error) {
-	output := filepath.Join(dir, fmt.Sprintf("builder_gen_%s.go", ToSnakeCase(data.Type)))
+func DataToFile(output string, tpl *template.Template, data Data) (err error) {
 	defer func() {
 		if err != nil {
 			os.Remove(output)
 		}
 	}()
+
+	//f, err := os.OpenFile(output, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	//if err != nil {
+	//	return err
+	//}
+	//defer f.Close()
+
+	buff := new(bytes.Buffer)
+
+	err = tpl.Execute(buff, data)
+	if err != nil {
+		return err
+	}
+	//f.Seek(0, 0)
+	//buf := new(bytes.Buffer)
+	//io.Copy(buf, f)
+	//f.Close()
+
+	ff, err := imports.Process(output, buff.Bytes(), nil)
+	if err != nil {
+		return err
+	}
+
+	buff = bytes.NewBuffer(ff)
 
 	f, err := os.OpenFile(output, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
@@ -63,7 +105,7 @@ func DataToFile(dir string, tpl *template.Template, data Data) (err error) {
 	}
 	defer f.Close()
 
-	err = tpl.Execute(f, data)
+	_, err = io.Copy(f, buff)
 
 	return err
 }
