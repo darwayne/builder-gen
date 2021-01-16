@@ -1,5 +1,7 @@
 # builder-gen
 
+<p align="center"><img src="https://user-images.githubusercontent.com/2807589/104822381-fac68500-580f-11eb-9e26-0dc9a0ed2776.png" width="300"></p>
+
 builder gen is a go tool that helps you 
 generate optional functions for a struct 
 via a builder type
