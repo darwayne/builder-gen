@@ -10,12 +10,13 @@ import (
 
 func main() {
 	var (
-		dir = flag.String("dir", "", "the directory to run builder gen on will use working directory if not provided")
+		dir       = flag.String("dir", "", "the directory to run builder-gen on. Will use working directory if not provided")
+		recursive = flag.Bool("recursive", false, "set to true to recursively iterate directories")
 	)
-
 	flag.Parse()
 
-	if err := generator.Dir(*dir); err != nil {
+	opts := generator.NewDirOptsBuilder().Recursive(*recursive).Build()
+	if err := generator.Dir(*dir, opts...); err != nil {
 		fmt.Printf("An error occurred:%+v\n", err)
 		os.Exit(1)
 	}

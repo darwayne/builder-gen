@@ -28,6 +28,14 @@ you want to generate a builder for
 1. A file called `build_gen_my_opts.go` gets generated with useful builder / optional funcs helpers for your struct
    - note: a file gets generated for each struct type within the package with the `::builder-gen` comment
 
+### Command Line Usage
+```text
+  --dir string
+        the directory to run builder-gen on. Will use working directory if not provided
+  --recursive
+        set to true to recursively iterate directories
+```
+
 ### Features
 
 ***Null Check Helper Methods***

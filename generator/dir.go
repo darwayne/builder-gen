@@ -8,19 +8,40 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
 	"golang.org/x/tools/imports"
 )
 
-func Dir(dir string) error {
+type DirOpts struct {
+	//::builder-gen
+	Recursive bool
+}
+
+func Dir(dir string, opts ...DirOptsFunc) error {
 	if dir == "" {
 		var err error
 		dir, err = os.Getwd()
 		if err != nil {
 			return err
 		}
+	}
+
+	info := ToDirOpts(opts...)
+	if info.Recursive {
+		return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				if strings.HasSuffix(info.Name(), ".") {
+					return nil
+				}
+
+				return Dir(path)
+			}
+
+			return nil
+		})
 	}
 
 	fset := token.NewFileSet()
@@ -51,8 +72,8 @@ func Dir(dir string) error {
 	}
 	for _, m := range models {
 		output := m.FilePath(dir)
-		_, filename := path.Split(output)
-		fmt.Println("generating", filename, "for struct", m.Type)
+		d, filename := path.Split(output)
+		fmt.Println("generating", filename, "for struct", m.Type, "in", d)
 		if err := DataToFile(output, tpl, m); err != nil {
 			return err
 		}
@@ -62,7 +83,7 @@ func Dir(dir string) error {
 
 	for file := range filesToDelete {
 		f := path.Join(dir, file)
-		fmt.Println("deleting file", file, os.Remove(f))
+		fmt.Println("deleting file", f, os.Remove(f))
 	}
 
 	return nil
@@ -75,22 +96,11 @@ func DataToFile(output string, tpl *template.Template, data Data) (err error) {
 		}
 	}()
 
-	//f, err := os.OpenFile(output, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, os.ModePerm)
-	//if err != nil {
-	//	return err
-	//}
-	//defer f.Close()
-
 	buff := new(bytes.Buffer)
-
 	err = tpl.Execute(buff, data)
 	if err != nil {
 		return err
 	}
-	//f.Seek(0, 0)
-	//buf := new(bytes.Buffer)
-	//io.Copy(buf, f)
-	//f.Close()
 
 	ff, err := imports.Process(output, buff.Bytes(), nil)
 	if err != nil {
@@ -98,7 +108,6 @@ func DataToFile(output string, tpl *template.Template, data Data) (err error) {
 	}
 
 	buff = bytes.NewBuffer(ff)
-
 	f, err := os.OpenFile(output, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		return err
