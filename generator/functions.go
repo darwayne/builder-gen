@@ -59,30 +59,68 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 				var mainType string
 				var isArray bool
 				var isPointer bool
+				var skip bool
+				lastType := ""
 				ast.Inspect(f, func(node ast.Node) bool {
+					//fmt.Printf("::%+v... TYPE:%T\n", node, node)
 					switch t := node.(type) {
+					case *ast.InterfaceType:
+						//fmt.Println("yo ... interface detected")
+						skip = true
+						lastType = "interface"
+						return false
+					case *ast.MapType:
+						lastType = "map"
+						skip = true
+						//fmt.Println("yooo", t.)
+						return false
+					case *ast.FuncType:
+						lastType = "func"
+						skip = true
+
+						//fmt.Println("yooo", t.Params.List[0].Type, t.Params.List[0].Names, t.Results.NumFields())
+						return false
 					case *ast.StarExpr:
-						isPointer = true
-						field.FieldType += "*"
+						lastType = "*"
+						if field.FieldType == "" {
+							isPointer = true
+							field.FieldType += "*"
+						}
 					case *ast.Ident:
 						if t.Obj != nil && t.Obj.Type != "var" {
+							lastType = "ident"
 							return false
 						}
-						if field.FieldType != "" && field.FieldType != "*" && len(field.FieldType) > 2 {
+						//fmt.Println("lasttype", lastType)
+						if lastType == "<nil>" {
 							field.FieldType += "."
 							mainType += "."
+						} else {
+							//fmt.Println()
 						}
 						field.FieldType += t.Name
 						mainType += t.Name
+						lastType = "ident"
 					case *ast.ArrayType:
+						lastType = "array"
 						isArray = true
+						if field.FieldType == "" || field.FieldType == "*" {
+							field.FieldParamPrefix = "..."
+						}
 						field.FieldType += "[]"
-						field.FieldParamPrefix = "..."
+					case *ast.SelectorExpr:
+						lastType = "selector"
+					default:
+						lastType = fmt.Sprintf("%T", node)
+
 					}
 
 					return true
 				})
 
+				if skip {
+					return false
+				}
 				if isPointer {
 					field.Star = "*"
 					field.Point = "&"

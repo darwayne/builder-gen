@@ -23,6 +23,7 @@ func main() {
 			exclusions = append(exclusions, ex)
 		}
 	}
+
 	opts := generator.NewDirOptsBuilder().
 		Recursive(*recursive).
 		RecursiveExclusions(exclusions...).
