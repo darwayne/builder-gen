@@ -19,6 +19,7 @@ type DirOpts struct {
 	//::builder-gen
 	Recursive           bool
 	RecursiveExclusions []string
+	Trace               bool
 }
 
 func Dir(dir string, opts ...DirOptsFunc) error {
@@ -62,6 +63,11 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 		})
 	}
 
+	var mode = parser.ParseComments
+	if info.Trace {
+		mode |= parser.Trace
+	}
+
 	fset := token.NewFileSet()
 	filesToDelete := make(map[string]struct{})
 	pkgs, err := parser.ParseDir(fset, dir, func(info os.FileInfo) bool {
@@ -72,7 +78,7 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 		}
 
 		return include
-	}, parser.ParseComments)
+	}, mode)
 	if err != nil {
 		return err
 	}
@@ -80,7 +86,7 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 	var models []Data
 	for _, pkg := range pkgs {
 		for _, f := range pkg.Files {
-			models = append(models, ModelsData(f)...)
+			models = append(models, ModelsData(f, fset)...)
 		}
 	}
 
@@ -92,7 +98,7 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 		output := m.FilePath(dir)
 		d, filename := path.Split(output)
 		fmt.Println("generating", filename, "for struct", m.Type, "in", d)
-		if err := DataToFile(output, tpl, m); err != nil {
+		if err := DataToFile(output, tpl, m, info.Trace); err != nil {
 			return err
 		}
 
@@ -107,13 +113,7 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 	return nil
 }
 
-func DataToFile(output string, tpl *template.Template, data Data) (err error) {
-	defer func() {
-		if err != nil {
-			os.Remove(output)
-		}
-	}()
-
+func DataToFile(output string, tpl *template.Template, data Data, trace bool) (err error) {
 	buff := new(bytes.Buffer)
 	err = tpl.Execute(buff, data)
 	if err != nil {
@@ -122,6 +122,9 @@ func DataToFile(output string, tpl *template.Template, data Data) (err error) {
 
 	ff, err := imports.Process(output, buff.Bytes(), nil)
 	if err != nil {
+		if trace {
+			fmt.Println("===", string(buff.Bytes()), "\n===")
+		}
 		return err
 	}
 

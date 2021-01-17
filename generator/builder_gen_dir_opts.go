@@ -13,6 +13,7 @@ func (o DirOpts) ToOptFuncs() []DirOptsFunc {
 	}
 
 	builder.Recursive(o.Recursive)
+	builder.Trace(o.Trace)
 
 	return builder.Build()
 }
@@ -27,14 +28,19 @@ func NewDirOptsBuilder(opts ...DirOptsFunc) *DirOptsBuilder {
 	return builder
 }
 
-func (l *DirOptsBuilder) Recursive(recursive bool) *DirOptsBuilder {
+func (l *DirOptsBuilder) Recursive(recursiveParam bool) *DirOptsBuilder {
 	return l.add(func(opts *DirOpts) {
-		opts.Recursive = recursive
+		opts.Recursive = recursiveParam
 	})
 }
-func (l *DirOptsBuilder) RecursiveExclusions(recursiveExclusions ...string) *DirOptsBuilder {
+func (l *DirOptsBuilder) RecursiveExclusions(recursiveExclusionsParam ...string) *DirOptsBuilder {
 	return l.add(func(opts *DirOpts) {
-		opts.RecursiveExclusions = recursiveExclusions
+		opts.RecursiveExclusions = recursiveExclusionsParam
+	})
+}
+func (l *DirOptsBuilder) Trace(traceParam bool) *DirOptsBuilder {
+	return l.add(func(opts *DirOpts) {
+		opts.Trace = traceParam
 	})
 }
 

@@ -1,15 +1,19 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/token"
+	"io"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode"
 )
 
-func ModelsData(f *ast.File) []Data {
+func ModelsData(f *ast.File, fset *token.FileSet) []Data {
 	var results []Data
 	ast.Inspect(f, func(node ast.Node) bool {
 		switch t := node.(type) {
@@ -21,7 +25,7 @@ func ModelsData(f *ast.File) []Data {
 			for _, c := range f.Comments {
 				for _, l := range c.List {
 					if strings.Contains(l.Text, "::builder-gen") {
-						results = append(results, data(f, t))
+						results = append(results, data(f, fset, t))
 						return false
 					}
 
@@ -34,7 +38,19 @@ func ModelsData(f *ast.File) []Data {
 	return results
 }
 
-func data(f *ast.File, t *ast.TypeSpec) Data {
+func data(f *ast.File, fset *token.FileSet, t *ast.TypeSpec) Data {
+	ff := fset.File(t.Pos())
+	file, err := os.Open(ff.Name())
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	buf := new(bytes.Buffer)
+	if _, err := io.Copy(buf, file); err != nil {
+		panic(err)
+	}
+	file.Close()
+	src := buf.Bytes()
 	fileData := Data{
 		Type:    t.Name.Name,
 		Package: f.Name.Name,
@@ -54,81 +70,40 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 				var field BuilderField
 				field.FieldName = f.Names[0].Name
 				field.FuncName = field.FieldName
-				field.ParamName = LcFirst(field.FieldName)
+				field.ParamName = LcFirst(field.FieldName) + "Param" // add suffix to avoid keyword collisions
 
-				var mainType string
 				var isArray bool
 				var isPointer bool
-				var skip bool
-				lastType := ""
-				ast.Inspect(f, func(node ast.Node) bool {
-					//fmt.Printf("::%+v... TYPE:%T\n", node, node)
-					switch t := node.(type) {
-					case *ast.InterfaceType:
-						//fmt.Println("yo ... interface detected")
-						skip = true
-						lastType = "interface"
-						return false
-					case *ast.MapType:
-						lastType = "map"
-						skip = true
-						//fmt.Println("yooo", t.)
-						return false
-					case *ast.FuncType:
-						lastType = "func"
-						skip = true
 
-						//fmt.Println("yooo", t.Params.List[0].Type, t.Params.List[0].Names, t.Results.NumFields())
-						return false
-					case *ast.StarExpr:
-						lastType = "*"
-						if field.FieldType == "" {
-							isPointer = true
-							field.FieldType += "*"
-						}
-					case *ast.Ident:
-						if t.Obj != nil && t.Obj.Type != "var" {
-							lastType = "ident"
-							return false
-						}
-						//fmt.Println("lasttype", lastType)
-						if lastType == "<nil>" {
-							field.FieldType += "."
-							mainType += "."
-						} else {
-							//fmt.Println()
-						}
-						field.FieldType += t.Name
-						mainType += t.Name
-						lastType = "ident"
-					case *ast.ArrayType:
-						lastType = "array"
-						isArray = true
-						if field.FieldType == "" || field.FieldType == "*" {
-							field.FieldParamPrefix = "..."
-						}
-						field.FieldType += "[]"
-					case *ast.SelectorExpr:
-						lastType = "selector"
-					default:
-						lastType = fmt.Sprintf("%T", node)
-
-					}
-
-					return true
-				})
-
-				if skip {
-					return false
-				}
-				if isPointer {
+				start := fset.PositionFor(f.Type.Pos(), false)
+				end := fset.PositionFor(f.Type.End(), false)
+				rawType := string(src[start.Offset:end.Offset])
+				if strings.HasPrefix(rawType, "*") {
 					field.Star = "*"
 					field.Point = "&"
+					if strings.HasPrefix(rawType, "*[]") {
+						isArray = true
+						isPointer = true
+						field.ParamType = "..." + rawType[3:]
+					} else {
+						field.ParamType = rawType[1:]
+					}
+
+				} else if strings.HasPrefix(rawType, "[]") {
+					isArray = true
+					isPointer = true
+					field.ParamType = "..." + rawType[2:]
 				}
+
+				field.FieldType = rawType
+				if field.ParamType == "" {
+					field.ParamType = rawType
+				}
+
 				if isArray {
-					field.ParamType += "..."
+					field.FieldParamPrefix = "..."
 				}
-				field.ParamType += mainType
+
 				fileData.BuilderFields = append(fileData.BuilderFields, field)
 				if isPointer || isArray {
 					fileData.PointerFields = append(fileData.PointerFields, field)
@@ -160,7 +135,6 @@ func data(f *ast.File, t *ast.TypeSpec) Data {
 	for _, c := range f.Comments {
 		for _, l := range c.List {
 			if strings.Contains(l.Text, "+build ") {
-				fmt.Println(l.Text)
 				fileData.BuildTags += l.Text + "\n\n"
 				break
 			}

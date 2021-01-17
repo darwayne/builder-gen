@@ -2,23 +2,32 @@
 package testpkg
 
 import (
+	"io"
 	"time"
 )
 
-func (o MyOpts) HasInteresting() bool {
-	return o.Interesting != nil
+func (o MyOpts) HasMultiArray() bool {
+	return o.MultiArray != nil
 }
 
 func (o MyOpts) ToOptFuncs() []MyOptsFunc {
 	builder := NewMyOptsBuilder()
 
-	if o.HasInteresting() {
-		builder.Interesting(*o.Interesting)
+	if o.HasMultiArray() {
+		builder.MultiArray(o.MultiArray...)
 	}
 
+	builder.Interesting(*o.Interesting)
 	builder.Yo(o.Yo)
 	builder.Total(o.Total)
 	builder.Duration(o.Duration)
+	builder.Complex(*o.Complex)
+	builder.Hmm(o.Hmm)
+	builder.SimpleChan(o.SimpleChan)
+	builder.ReceiveOnlyChan(o.ReceiveOnlyChan)
+	builder.ComplexChan(o.ComplexChan)
+	builder.Map(o.Map)
+	builder.FixedSizeArray(o.FixedSizeArray)
 
 	return builder.Build()
 }
@@ -33,24 +42,64 @@ func NewMyOptsBuilder(opts ...MyOptsFunc) *MyOptsBuilder {
 	return builder
 }
 
-func (l *MyOptsBuilder) Interesting(interesting bool) *MyOptsBuilder {
+func (l *MyOptsBuilder) Interesting(interestingParam bool) *MyOptsBuilder {
 	return l.add(func(opts *MyOpts) {
-		opts.Interesting = &interesting
+		opts.Interesting = &interestingParam
 	})
 }
-func (l *MyOptsBuilder) Yo(yo string) *MyOptsBuilder {
+func (l *MyOptsBuilder) Yo(yoParam string) *MyOptsBuilder {
 	return l.add(func(opts *MyOpts) {
-		opts.Yo = yo
+		opts.Yo = yoParam
 	})
 }
-func (l *MyOptsBuilder) Total(total int) *MyOptsBuilder {
+func (l *MyOptsBuilder) Total(totalParam int) *MyOptsBuilder {
 	return l.add(func(opts *MyOpts) {
-		opts.Total = total
+		opts.Total = totalParam
 	})
 }
-func (l *MyOptsBuilder) Duration(duration time.Duration) *MyOptsBuilder {
+func (l *MyOptsBuilder) Duration(durationParam time.Duration) *MyOptsBuilder {
 	return l.add(func(opts *MyOpts) {
-		opts.Duration = duration
+		opts.Duration = durationParam
+	})
+}
+func (l *MyOptsBuilder) Complex(complexParam func(string) func(reader io.Reader) time.Duration) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.Complex = &complexParam
+	})
+}
+func (l *MyOptsBuilder) Hmm(hmmParam io.Reader) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.Hmm = hmmParam
+	})
+}
+func (l *MyOptsBuilder) SimpleChan(simpleChanParam chan struct{}) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.SimpleChan = simpleChanParam
+	})
+}
+func (l *MyOptsBuilder) ReceiveOnlyChan(receiveOnlyChanParam <-chan string) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.ReceiveOnlyChan = receiveOnlyChanParam
+	})
+}
+func (l *MyOptsBuilder) ComplexChan(complexChanParam chan func(string) io.Reader) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.ComplexChan = complexChanParam
+	})
+}
+func (l *MyOptsBuilder) Map(mapParam map[string]string) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.Map = mapParam
+	})
+}
+func (l *MyOptsBuilder) MultiArray(multiArrayParam ...[]string) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.MultiArray = multiArrayParam
+	})
+}
+func (l *MyOptsBuilder) FixedSizeArray(fixedSizeArrayParam [3]string) *MyOptsBuilder {
+	return l.add(func(opts *MyOpts) {
+		opts.FixedSizeArray = fixedSizeArrayParam
 	})
 }
 
