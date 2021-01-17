@@ -43,7 +43,7 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 			dirs[p] = struct{}{}
 		}
 		return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if info.IsDir() {
+			if info != nil && info.IsDir() {
 				if strings.HasPrefix(info.Name(), ".") {
 					dirs[path] = struct{}{}
 					return nil
