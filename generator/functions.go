@@ -23,6 +23,10 @@ func ModelsData(f *ast.File, fset *token.FileSet) []Data {
 			}
 
 			for _, c := range f.Comments {
+				isValidComment := c.Pos() > t.Pos() && c.End() < t.End()
+				if !isValidComment {
+					continue
+				}
 				for _, l := range c.List {
 					if strings.Contains(l.Text, "::builder-gen") {
 						results = append(results, data(f, fset, t))
