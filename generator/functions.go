@@ -85,9 +85,10 @@ func data(f *ast.File, fset *token.FileSet, t *ast.TypeSpec) Data {
 				if strings.HasPrefix(rawType, "*") {
 					field.Star = "*"
 					field.Point = "&"
+					isPointer = true
+
 					if strings.HasPrefix(rawType, "*[]") {
 						isArray = true
-						isPointer = true
 						field.ParamType = "..." + rawType[3:]
 					} else {
 						field.ParamType = rawType[1:]
