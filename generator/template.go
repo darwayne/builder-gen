@@ -49,6 +49,14 @@ func (l *{{$.Type}}Builder) Build() []{{$.Type}}Func {
 	return l.opts
 }
 
+func (l *{{$.Type}}Builder) To{{$.Type}}() {{$.Type}} {
+	return To{{$.Type}}(l.opts...)
+}
+
+func (l *{{$.Type}}Builder)  To{{$.Type}}WithDefault(info *{{$.Type}}) {
+	To{{$.Type}}WithDefault(info, l.opts...)
+}
+
 func To{{$.Type}}(opts ...{{$.Type}}Func) {{$.Type}} {
 	var info {{$.Type}}
 	To{{$.Type}}WithDefault(&info, opts...)

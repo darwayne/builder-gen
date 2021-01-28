@@ -6,6 +6,14 @@ import (
 	"time"
 )
 
+func (o MyOpts) HasInteresting() bool {
+	return o.Interesting != nil
+}
+
+func (o MyOpts) HasComplex() bool {
+	return o.Complex != nil
+}
+
 func (o MyOpts) HasMultiArray() bool {
 	return o.MultiArray != nil
 }
@@ -13,15 +21,19 @@ func (o MyOpts) HasMultiArray() bool {
 func (o MyOpts) ToOptFuncs() []MyOptsFunc {
 	builder := NewMyOptsBuilder()
 
+	if o.HasInteresting() {
+		builder.Interesting(*o.Interesting)
+	}
+	if o.HasComplex() {
+		builder.Complex(*o.Complex)
+	}
 	if o.HasMultiArray() {
 		builder.MultiArray(o.MultiArray...)
 	}
 
-	builder.Interesting(*o.Interesting)
 	builder.Yo(o.Yo)
 	builder.Total(o.Total)
 	builder.Duration(o.Duration)
-	builder.Complex(*o.Complex)
 	builder.Hmm(o.Hmm)
 	builder.SimpleChan(o.SimpleChan)
 	builder.ReceiveOnlyChan(o.ReceiveOnlyChan)
@@ -110,6 +122,14 @@ func (l *MyOptsBuilder) add(fn MyOptsFunc) *MyOptsBuilder {
 
 func (l *MyOptsBuilder) Build() []MyOptsFunc {
 	return l.opts
+}
+
+func (l *MyOptsBuilder) ToMyOpts() MyOpts {
+	return ToMyOpts(l.opts...)
+}
+
+func (l *MyOptsBuilder) ToMyOptsWithDefault(info *MyOpts) {
+	ToMyOptsWithDefault(info, l.opts...)
 }
 
 func ToMyOpts(opts ...MyOptsFunc) MyOpts {

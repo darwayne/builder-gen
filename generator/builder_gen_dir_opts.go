@@ -53,6 +53,14 @@ func (l *DirOptsBuilder) Build() []DirOptsFunc {
 	return l.opts
 }
 
+func (l *DirOptsBuilder) ToDirOpts() DirOpts {
+	return ToDirOpts(l.opts...)
+}
+
+func (l *DirOptsBuilder) ToDirOptsWithDefault(info *DirOpts) {
+	ToDirOptsWithDefault(info, l.opts...)
+}
+
 func ToDirOpts(opts ...DirOptsFunc) DirOpts {
 	var info DirOpts
 	ToDirOptsWithDefault(&info, opts...)
