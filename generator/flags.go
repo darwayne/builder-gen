@@ -18,7 +18,7 @@ func annotateFlagInfo(comment string, data *Data) {
 	f.StringVar(&data.Suffix, "suffix", "",
 		"if set this will be the suffix of your global functions. Note: with-globals option required")
 	str := strings.Split(comment, magicString+" ")
-	f.Usage()
+
 	if len(str) == 1 {
 		return
 	}
