@@ -98,6 +98,43 @@ opts2 := MyOpts{
 }
 ```
 
+***Configure generation for a particular struct***
+```
+Usage of ::builder-gen flags:
+  -no-builder
+        set this flag if you want to exclude creating the builder object
+  -prefix string
+        if set this will be the prefix of your global functions. Note: with-globals option required
+  -suffix string
+        if set this will be the suffix of your global functions. Note: with-globals option required
+  -with-globals
+        set this flag if you want to generate global functions as well
+
+```
+
+Configuration is set directly in the comment 
+```go
+ type MyOpts struct {
+   // ::builder-gen -with-globals -prefix=With -suffix=Opt -no-builder
+   ExampleShown bool
+   Cool *string
+   Steps []string
+ }
+
+opts := ToMyOpts(
+    WithExampleShownOpt(true),
+    WithCoolOpt("beans"),
+    WithStepsOpt("1", "2", "3"))
+
+// opt will be equivalent to the following
+cool := "beans"
+opts2 := MyOpts{
+    Cool: &cool, 
+    ExampleShown: true, 
+    Steps: []string{"1", "2", "3"},
+}
+```
+
 ***Set Defaults on Your Struct And Have Optional Functions Override Them***
 ```go
 cool := "beans"

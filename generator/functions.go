@@ -28,8 +28,8 @@ func ModelsData(f *ast.File, fset *token.FileSet) []Data {
 					continue
 				}
 				for _, l := range c.List {
-					if strings.Contains(l.Text, "::builder-gen") {
-						results = append(results, data(f, fset, t))
+					if strings.Contains(l.Text, magicString) {
+						results = append(results, data(f, fset, t, l))
 						return false
 					}
 
@@ -42,7 +42,7 @@ func ModelsData(f *ast.File, fset *token.FileSet) []Data {
 	return results
 }
 
-func data(f *ast.File, fset *token.FileSet, t *ast.TypeSpec) Data {
+func data(f *ast.File, fset *token.FileSet, t *ast.TypeSpec, comment *ast.Comment) Data {
 	ff := fset.File(t.Pos())
 	file, err := os.Open(ff.Name())
 	if err != nil {
@@ -59,6 +59,8 @@ func data(f *ast.File, fset *token.FileSet, t *ast.TypeSpec) Data {
 		Type:    t.Name.Name,
 		Package: f.Name.Name,
 	}
+
+	annotateFlagInfo(comment.Text, &fileData)
 	ast.Inspect(t, func(node ast.Node) bool {
 		switch t := node.(type) {
 		case *ast.StructType:
@@ -159,6 +161,10 @@ type Data struct {
 	BuilderFields    []BuilderField
 	PointerFields    []BuilderField
 	NonPointerFields []BuilderField
+	Globals          bool
+	NoBuilder        bool
+	Prefix           string
+	Suffix           string
 }
 
 func (d Data) FilePath(dir string) string {

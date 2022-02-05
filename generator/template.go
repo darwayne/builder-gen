@@ -10,6 +10,9 @@ func (o {{$.Type}}) Has{{.FieldName}}() bool {
 }
 {{end}}
 
+type {{$.Type}}Func func(*{{$.Type}})
+{{if not $.NoBuilder}}
+
 func (o {{$.Type}}) ToOptFuncs() []{{$.Type}}Func {
 	builder := New{{$.Type}}Builder()
 {{range .PointerFields}}
@@ -23,7 +26,6 @@ func (o {{$.Type}}) ToOptFuncs() []{{$.Type}}Func {
 	return builder.Build()
 }
 
-type {{$.Type}}Func func(*{{$.Type}})
 type {{$.Type}}Builder struct {
 	opts  []{{$.Type}}Func
 }
@@ -55,7 +57,7 @@ func (l *{{$.Type}}Builder) To{{$.Type}}() {{$.Type}} {
 
 func (l *{{$.Type}}Builder)  To{{$.Type}}WithDefault(info *{{$.Type}}) {
 	To{{$.Type}}WithDefault(info, l.opts...)
-}
+}{{end}}
 
 func To{{$.Type}}(opts ...{{$.Type}}Func) {{$.Type}} {
 	var info {{$.Type}}
@@ -69,4 +71,13 @@ func To{{$.Type}}WithDefault(info *{{$.Type}}, opts ...{{$.Type}}Func) {
 		o(info)
 	}
 }
+
+{{if .Globals}}
+{{range .BuilderFields}}
+func {{$.Prefix}}{{.FuncName}}{{$.Suffix}}({{.ParamName}} {{.ParamType}}) {{$.Type}}Func {
+	return func(opts *{{$.Type}}) {
+		opts.{{.FieldName}} = {{.Point}}{{.ParamName}}
+	}
+}
+{{end}}{{end}}
 `
