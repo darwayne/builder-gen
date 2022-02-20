@@ -74,6 +74,17 @@ func data(f *ast.File, fset *token.FileSet, t *ast.TypeSpec, comment *ast.Commen
 				}
 
 				var field BuilderField
+				if f.Tag != nil {
+					if strings.Contains(f.Tag.Value, `builder-gen:"-"`) {
+						continue
+					}
+
+					if strings.Contains(f.Tag.Value, `builder-gen:"optional"`) {
+						field.OptionalBool = true
+					}
+
+				}
+
 				field.FieldName = f.Names[0].Name
 				field.FuncName = field.FieldName
 				field.ParamName = LcFirst(field.FieldName) + "Param" // add suffix to avoid keyword collisions
@@ -107,12 +118,18 @@ func data(f *ast.File, fset *token.FileSet, t *ast.TypeSpec, comment *ast.Commen
 					field.ParamType = rawType
 				}
 
+				field.OptionalBool = rawType == "bool" && (fileData.UseOptionalBools || field.OptionalBool)
+				if field.OptionalBool {
+					isArray = true
+					field.ParamType = "..." + rawType
+				}
+
 				if isArray {
 					field.FieldParamPrefix = "..."
 				}
 
 				fileData.BuilderFields = append(fileData.BuilderFields, field)
-				if isPointer || isArray {
+				if (isPointer || isArray) && !field.OptionalBool {
 					fileData.PointerFields = append(fileData.PointerFields, field)
 				} else {
 					fileData.NonPointerFields = append(fileData.NonPointerFields, field)
@@ -163,6 +180,7 @@ type Data struct {
 	NonPointerFields []BuilderField
 	Globals          bool
 	NoBuilder        bool
+	UseOptionalBools bool
 	Prefix           string
 	Suffix           string
 }
@@ -173,6 +191,7 @@ func (d Data) FilePath(dir string) string {
 
 type BuilderField struct {
 	ParamName        string
+	OptionalBool     bool
 	ParamType        string
 	FuncName         string
 	FieldName        string

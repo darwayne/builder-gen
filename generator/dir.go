@@ -90,7 +90,7 @@ func Dir(dir string, opts ...DirOptsFunc) error {
 		}
 	}
 
-	tpl, err := template.New("").Parse(tmpl)
+	tpl, err := template.New("").Parse(strings.ReplaceAll(tmpl, "-}}\n", "}}"))
 	if err != nil {
 		return err
 	}

@@ -21,7 +21,13 @@ func (o {{$.Type}}) ToOptFuncs() []{{$.Type}}Func {
 	}{{end}}
 
 {{range .NonPointerFields}}
-	builder.{{.FuncName}}({{.Star}}o.{{.FieldName}}{{.FieldParamPrefix}}){{end}}
+{{if not .OptionalBool -}}
+	builder.{{.FuncName}}({{.Star}}o.{{.FieldName}}{{.FieldParamPrefix}})
+{{end -}}
+{{if .OptionalBool -}}
+	builder.{{.FuncName}}({{.Star}}o.{{.FieldName}})
+{{end -}}
+{{end -}}
 
 	return builder.Build()
 }
@@ -38,7 +44,11 @@ func New{{$.Type}}Builder(opts ...{{$.Type}}Func) *{{$.Type}}Builder {
 {{range .BuilderFields}}
 func (l *{{$.Type}}Builder) {{.FuncName}}({{.ParamName}} {{.ParamType}}) *{{$.Type}}Builder {
 	return l.add(func(opts *{{$.Type}}) {
+{{if not .OptionalBool -}}
 		opts.{{.FieldName}} = {{.Point}}{{.ParamName}}
+{{end}}{{if .OptionalBool -}}
+		opts.{{.FieldName}} = len({{.ParamName}}) == 0 || {{.ParamName}}[0]
+{{end -}}
 	})
 }{{end}}
 
@@ -76,7 +86,11 @@ func To{{$.Type}}WithDefault(info *{{$.Type}}, opts ...{{$.Type}}Func) {
 {{range .BuilderFields}}
 func {{$.Prefix}}{{.FuncName}}{{$.Suffix}}({{.ParamName}} {{.ParamType}}) {{$.Type}}Func {
 	return func(opts *{{$.Type}}) {
+{{if not .OptionalBool -}}
 		opts.{{.FieldName}} = {{.Point}}{{.ParamName}}
+{{end}}{{if .OptionalBool -}}
+		opts.{{.FieldName}} = len({{.ParamName}}) == 0 || {{.ParamName}}[0]
+{{end -}}
 	}
 }
 {{end}}{{end}}

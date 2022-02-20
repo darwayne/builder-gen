@@ -11,6 +11,9 @@ func annotateFlagInfo(comment string, data *Data) {
 	f.BoolVar(&data.Globals,
 		"with-globals", false,
 		"set this flag if you want to generate global functions as well")
+	f.BoolVar(&data.UseOptionalBools,
+		"with-optional-bools", false,
+		"set this flag if you want bool opts to be optional")
 	f.BoolVar(&data.NoBuilder, "no-builder", false,
 		"set this flag if you want to exclude creating the builder object")
 	f.StringVar(&data.Prefix, "prefix", "",
